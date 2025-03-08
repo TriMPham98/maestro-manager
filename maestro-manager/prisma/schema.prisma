@@ -1,0 +1,178 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// User model (music teacher)
+model User {
+  id            String    @id @default(cuid())
+  name          String
+  email         String    @unique
+  emailVerified DateTime?
+  password      String
+  image         String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  
+  // Business information
+  businessName  String?
+  address       String?
+  city          String?
+  state         String?
+  zipCode       String?
+  phone         String?
+  bio           String?
+  
+  // Default settings
+  defaultLessonDuration Int     @default(45) // in minutes
+  defaultHourlyRate     Decimal @default(60) // in dollars
+  
+  // Relationships
+  students      Student[]
+  lessons       Lesson[]
+  payments      Payment[]
+  settings      Settings?
+}
+
+// Student model
+model Student {
+  id          String   @id @default(cuid())
+  firstName   String
+  lastName    String
+  email       String?
+  phone       String?
+  instrument  String
+  level       String   // Beginner, Intermediate, Advanced
+  startDate   DateTime
+  status      String   // Active, Inactive
+  notes       String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  // Parent/guardian information (for younger students)
+  parentName  String?
+  parentEmail String?
+  parentPhone String?
+  
+  // Relationships
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  lessons     Lesson[]
+  payments    Payment[]
+  progress    Progress[]
+  
+  @@index([userId])
+  @@unique([email, userId], name: "email_userId")
+}
+
+// Lesson model
+model Lesson {
+  id          String   @id @default(cuid())
+  date        DateTime
+  startTime   DateTime
+  endTime     DateTime
+  duration    Int      // in minutes
+  status      String   // Scheduled, Completed, Cancelled, No-show
+  notes       String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  // Relationships
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  studentId   String
+  student     Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  progress    Progress?
+  payment     Payment?
+  
+  @@index([userId])
+  @@index([studentId])
+}
+
+// Payment model
+model Payment {
+  id          String   @id @default(cuid())
+  amount      Decimal
+  date        DateTime
+  method      String   // Credit Card, Bank Transfer, Cash, PayPal, etc.
+  status      String   // Paid, Pending, Refunded
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  // Relationships
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  studentId   String
+  student     Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  lessonId    String?  @unique
+  lesson      Lesson?  @relation(fields: [lessonId], references: [id])
+  
+  @@index([userId])
+  @@index([studentId])
+}
+
+// Progress model (for tracking student progress)
+model Progress {
+  id          String   @id @default(cuid())
+  date        DateTime
+  skills      String   // Skills practiced
+  repertoire  String?  // Pieces worked on
+  homework    String?  // Assigned homework
+  comments    String?  // Teacher comments
+  rating      Int?     // Performance rating (1-5)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  // Relationships
+  studentId   String
+  student     Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  lessonId    String   @unique
+  lesson      Lesson   @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  
+  @@index([studentId])
+}
+
+// Teaching materials
+model Material {
+  id          String   @id @default(cuid())
+  title       String
+  type        String   // Sheet Music, Exercise, Resource
+  description String?
+  fileUrl     String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  // Relationships
+  categories  MaterialCategory[]
+}
+
+// Material categories
+model MaterialCategory {
+  id          String   @id @default(cuid())
+  name        String
+  
+  // Relationships
+  materials   Material[]
+}
+
+// User settings
+model Settings {
+  id                    String   @id @default(cuid())
+  emailReminders        Boolean  @default(true)
+  paymentNotifications  Boolean  @default(true)
+  theme                 String   @default("light")
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+  
+  // Relationships
+  userId                String   @unique
+  user                  User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+} 

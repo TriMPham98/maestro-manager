@@ -8,12 +8,16 @@ import {
   Settings,
   LogOut,
 } from "lucide-react";
+import { requireAuth } from "@/lib/auth";
 
-export default function DashboardLayout({
+export default async function DashboardLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  // Require authentication for all dashboard pages
+  const user = await requireAuth();
+
   return (
     <div className="flex h-screen bg-gray-100">
       {/* Sidebar */}
@@ -55,7 +59,7 @@ export default function DashboardLayout({
                 Settings
               </Link>
               <Link
-                href="/logout"
+                href="/api/auth/signout"
                 className="flex items-center px-2 py-2 text-sm font-medium rounded-md text-indigo-100 hover:bg-indigo-600">
                 <LogOut className="mr-3 h-6 w-6" />
                 Logout
@@ -84,7 +88,7 @@ export default function DashboardLayout({
                     <button className="max-w-xs bg-indigo-600 rounded-full flex items-center text-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
                       <span className="sr-only">Open user menu</span>
                       <div className="h-8 w-8 rounded-full bg-indigo-700 flex items-center justify-center text-white">
-                        MT
+                        {user.name ? user.name.charAt(0).toUpperCase() : "U"}
                       </div>
                     </button>
                   </div>
